@@ -184,6 +184,17 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
   repeatOptions: number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   currentAudio: HTMLAudioElement | null = null;
   infiniteLoop: boolean = false;
+  currentSuraName: string = '';
+  preloadedAudios: HTMLAudioElement[] = [];
+  preloadedImages: HTMLImageElement[] = [];
+  preloadCount: number = 3;
+  currentYear = new Date().getFullYear();
+
+  // Add properties for audio concatenation
+  private nextAudio: HTMLAudioElement | null = null;
+  private isPreloading: boolean = false;
+  private audioEndedHandler: (() => void) | null = null;
+  private audioErrorHandler: ((error: Event) => void) | null = null;
 
   constructor(private http: HttpClient) {
     console.log("EhfazComponent constructor called");
@@ -197,11 +208,17 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
     
     // Initialize with default values
     this.selectedSheikh = this.sheikhs[0].value;
+    this.startSura = 1;
+    this.startAyah = 1;
+    this.endSura = 1;
+    this.endAyah = 1;
+    this.currentSura = 1;
+    this.currentAyah = 1;
+    this.currentSuraName = this.getSurahName(this.currentSura);
+    
     console.log("Default sheikh selected:", this.selectedSheikh);
-
-    console.log("getSurahRange called");
-    this.endSura = this.startSura;
-    this.endAyah = this.startAyah;
+    console.log("Initial sura:", this.currentSura);
+    console.log("Initial sura name:", this.currentSuraName);
   }
 
   ngAfterViewInit() {
@@ -229,16 +246,215 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
     let currentSura = this.startSura;
     let currentAyah = this.startAyah;
 
-    while (currentSura < this.endSura || (currentSura === this.endSura && currentAyah <= this.endAyah)) {
+    console.log("Starting to prepare queue from Sura", currentSura, "Ayah", currentAyah, 
+                "to Sura", this.endSura, "Ayah", this.endAyah);
+
+    // Continue until we reach the end sura and end ayah
+    while (true) {
+      // Add current ayah to queue
       const audioUrl = this.getAudioUrl(currentSura, currentAyah);
       this.audioQueue.push(audioUrl);
+      console.log(`Added to queue: Sura ${currentSura} Ayah ${currentAyah}`);
 
+      // Check if we've reached the end
+      if (currentSura == this.endSura && currentAyah == this.endAyah) {
+        break;
+      }
+
+      // Move to next ayah
       currentAyah++;
+
+      // If we've reached the end of current sura
       if (currentAyah > this.getSuraAyahCount(currentSura)) {
         currentSura++;
         currentAyah = 1;
+        console.log(`Moving to next sura: ${currentSura}`);
+
+        if (currentSura > this.endSura) {
+          break;
+        }
       }
     }
+
+    console.log(`Audio queue prepared with ${this.audioQueue.length} items`);
+  }
+
+  playAudio() {
+    if (this.isPlaying) {
+      return;
+    }
+
+    console.log(`Starting playback from Sura ${this.startSura} Ayah ${this.startAyah} to Sura ${this.endSura} Ayah ${this.endAyah}`);
+    
+    // Reset the audio queue and prepare it with all ayahs from start to end
+    this.prepareAudioQueue();
+    
+    // Reset playback state
+    this.currentAudioIndex = 0;
+    this.currentRepetition = 0;
+    this.currentSura = this.startSura;
+    this.currentAyah = this.startAyah;
+    this.currentSuraName = this.getSurahName(this.currentSura);
+    this.isPlaying = true;
+    
+    console.log(`Queue prepared. Starting playback with ${this.audioQueue.length} items`);
+    
+    // Start playing
+    this.playNextAudio();
+  }
+
+  playNextAudio() {
+    if (!this.isPlaying) {
+      return;
+    }
+
+    if (this.currentAudioIndex >= this.audioQueue.length) {
+      this.currentRepetition++;
+      
+      if (this.infiniteLoop || this.currentRepetition < this.repetitionCount) {
+        this.prepareAudioQueue();
+        this.currentAudioIndex = 0;
+        this.currentSura = this.startSura;
+        this.currentAyah = this.startAyah;
+        this.currentSuraName = this.getSurahName(this.currentSura);
+        console.log("Restarting playback with sura:", this.currentSura, "ayah:", this.currentAyah);
+        this.playNextAudio();
+      } else {
+        this.stopAudio();
+      }
+      return;
+    }
+
+    // Calculate current sura and ayah based on the audio index
+    let tempSura = this.startSura;
+    let tempAyah = this.startAyah;
+    let remainingIndex = this.currentAudioIndex;
+
+    while (remainingIndex > 0) {
+      tempAyah++;
+      if (tempAyah > this.getSuraAyahCount(tempSura)) {
+        tempSura++;
+        tempAyah = 1;
+      }
+      remainingIndex--;
+    }
+
+    this.currentSura = tempSura;
+    this.currentAyah = tempAyah;
+    this.currentSuraName = this.getSurahName(this.currentSura);
+
+    if (this.currentSura === this.endSura && this.currentAyah > this.endAyah) {
+      console.log("Reached end sura and ayah, stopping playback");
+      this.stopAudio();
+      return;
+    }
+
+    const audioUrl = this.audioQueue[this.currentAudioIndex];
+    console.log("Playing audio:", audioUrl);
+    console.log("Current Sura:", this.currentSura, "Current Ayah:", this.currentAyah);
+    console.log("Current Sura Name:", this.currentSuraName);
+    console.log("Audio index:", this.currentAudioIndex, "of", this.audioQueue.length);
+
+    // Create a new audio element
+    this.currentAudio = new Audio(audioUrl);
+    
+    // Remove any existing event listeners
+    if (this.audioEndedHandler) {
+      this.currentAudio.removeEventListener('ended', this.audioEndedHandler);
+    }
+    if (this.audioErrorHandler) {
+      this.currentAudio.removeEventListener('error', this.audioErrorHandler);
+    }
+    
+    // Add event listeners
+    this.audioEndedHandler = () => {
+      this.currentAudioIndex++;
+      
+      // Check if we've reached the end of a sura
+      if (this.currentAyah >= this.getSuraAyahCount(this.currentSura)) {
+        console.log("Reached end of sura:", this.currentSura);
+        
+        if (this.currentSura < this.endSura) {
+          console.log("Continuing to next sura:", this.currentSura + 1);
+          this.currentSura++;
+          this.currentAyah = 1;
+          this.currentSuraName = this.getSurahName(this.currentSura);
+        }
+      } else {
+        this.currentAyah++;
+      }
+      
+      if (this.currentSura === this.endSura && this.currentAyah > this.endAyah) {
+        console.log("Reached end sura and ayah, stopping playback");
+        this.stopAudio();
+        return;
+      }
+      
+      // Preload the next audio
+      this.preloadNextAudio();
+      
+      // Start playing the next audio immediately
+      this.playNextAudio();
+    };
+    
+    this.audioErrorHandler = (error) => {
+      console.error("Error playing audio:", error);
+      this.currentAudioIndex++;
+      this.preloadNextAudio();
+      this.playNextAudio();
+    };
+    
+    this.currentAudio.addEventListener('ended', this.audioEndedHandler);
+    this.currentAudio.addEventListener('error', this.audioErrorHandler);
+
+    // Preload the next audio
+    this.preloadNextAudio();
+
+    // Play the audio
+    this.currentAudio.play().catch(error => {
+      console.error("Error playing audio:", error);
+      this.currentAudioIndex++;
+      this.preloadNextAudio();
+      this.playNextAudio();
+    });
+  }
+
+  preloadNextAudio() {
+    if (this.isPreloading || this.currentAudioIndex + 1 >= this.audioQueue.length) {
+      return;
+    }
+
+    this.isPreloading = true;
+    const nextAudioUrl = this.audioQueue[this.currentAudioIndex + 1];
+    
+    // Create and preload the next audio
+    this.nextAudio = new Audio();
+    this.nextAudio.preload = 'auto';
+    
+    this.nextAudio.addEventListener('canplaythrough', () => {
+      console.log("Next audio preloaded:", nextAudioUrl);
+      this.isPreloading = false;
+    }, { once: true });
+    
+    this.nextAudio.addEventListener('error', (error) => {
+      console.error("Error preloading next audio:", error);
+      this.isPreloading = false;
+    }, { once: true });
+    
+    this.nextAudio.src = nextAudioUrl;
+  }
+
+  stopAudio() {
+    this.isPlaying = false;
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio = null;
+    }
+    if (this.nextAudio) {
+      this.nextAudio.pause();
+      this.nextAudio = null;
+    }
+    this.isPreloading = false;
   }
 
   getSuraAyahCount(sura: number): number {
@@ -273,6 +489,15 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
   onStartSuraChange() {
     console.log("Start Sura changed to:", this.startSura);
     this.startAyah = 1;
+    
+    // Directly update currentSura and currentAyah
+    this.currentSura = this.startSura;
+    this.currentAyah = this.startAyah;
+    
+    // Update the current sura name
+    this.currentSuraName = this.getSurahName(this.currentSura);
+    console.log("Current sura name:", this.currentSuraName);
+    
     if (this.endSura < this.startSura) {
       this.endSura = this.startSura;
       this.endAyah = this.startAyah;
@@ -281,6 +506,7 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onStartAyahChange() {
     console.log("Start Ayah changed to:", this.startAyah);
+    this.currentAyah = this.startAyah;
     if (this.startSura === this.endSura && this.endAyah < this.startAyah) {
       this.endAyah = this.startAyah;
     }
@@ -292,66 +518,11 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   getSurahName(sura: number): string {
-    const surah = this.surahs.find(s => s.number === sura);
+    if (!sura || !this.surahs) return '';
+    console.log("Getting name for sura:", sura);
+    console.log("Available surahs:", this.surahs.map(s => s.number + ": " + s.name).join(", "));
+    const surah = this.surahs.find(s => s.number == sura);
+    console.log("Found surah:", surah);
     return surah ? surah.name : '';
-  }
-
-  playAudio() {
-    if (this.isPlaying) {
-      return;
-    }
-
-    this.prepareAudioQueue();
-    this.currentAudioIndex = 0;
-    this.currentRepetition = 0;
-    this.isPlaying = true;
-    this.playNextAudio();
-  }
-
-  playNextAudio() {
-    if (!this.isPlaying) {
-      return;
-    }
-
-    if (this.currentAudioIndex >= this.audioQueue.length) {
-      this.currentRepetition++;
-      
-      if (this.infiniteLoop || this.currentRepetition < this.repetitionCount) {
-        this.currentAudioIndex = 0;
-        this.playNextAudio();
-      } else {
-        this.stopAudio();
-      }
-      return;
-    }
-
-    const audioUrl = this.audioQueue[this.currentAudioIndex];
-    console.log("Playing audio:", audioUrl);
-
-    this.currentAudio = new Audio(audioUrl);
-    this.currentAudio.addEventListener('ended', () => {
-      this.currentAudioIndex++;
-      this.playNextAudio();
-    });
-
-    this.currentAudio.addEventListener('error', (error) => {
-      console.error("Error playing audio:", error);
-      this.currentAudioIndex++;
-      this.playNextAudio();
-    });
-
-    this.currentAudio.play().catch(error => {
-      console.error("Error playing audio:", error);
-      this.currentAudioIndex++;
-      this.playNextAudio();
-    });
-  }
-
-  stopAudio() {
-    this.isPlaying = false;
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio = null;
-    }
   }
 } 

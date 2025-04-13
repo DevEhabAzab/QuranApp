@@ -1,5 +1,5 @@
 <div class="ehfaz-container">
-  <h1>Ehfaz Component</h1>
+  <h1>Ehfaz</h1>
   
   <div class="controls">
     <div class="sheikh-select">
@@ -69,10 +69,14 @@
     </div>
   </div>
   
-  <div class="display-area" *ngIf="isPlaying">
-    <h2>Sura {{getSurahName(currentSura)}}, Ayah {{currentAyah}}</h2>
+  <div class="display-area">
+    <h2>سورة {{currentSuraName}}، آية {{currentAyah}}</h2>
     <p class="repetition-info" *ngIf="!infiniteLoop && repetitionCount > 1">Repetition {{currentRepetition + 1}} of {{repetitionCount}}</p>
     <p class="repetition-info" *ngIf="infiniteLoop">Infinite Loop Mode</p>
     <img [src]="getImageUrl(currentSura, currentAyah)" alt="Quran Text">
+  </div>
+  
+  <div class="copyright">
+    <p>© {{currentYear}} Ehab Azab ❤️</p>
   </div>
 </div>
