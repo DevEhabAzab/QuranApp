@@ -1,6 +1,6 @@
-# Hafazny - Quran Memorization App
+# Quran Memorization App
 
-Hafazny is an Angular-based web application designed to help users memorize the Quran through audio playback and visual aids.
+A web application designed to help users memorize the Quran through audio playback and visual aids.
 
 ## Features
 
@@ -29,12 +29,12 @@ Hafazny is an Angular-based web application designed to help users memorize the 
 
 1. Clone the repository
    ```
-   git clone https://github.com/yourusername/hafazny.git
+   git clone https://github.com/Ehab-azab/quran-memorization-app.git
    ```
 
 2. Navigate to the project directory
    ```
-   cd hafazny
+   cd quran-memorization-app
    ```
 
 3. Install dependencies
