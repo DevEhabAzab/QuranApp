@@ -1,6 +1,4 @@
 import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
 interface Sheikh {
@@ -15,10 +13,9 @@ interface Sura {
 
 @Component({
   selector: 'app-ehfaz',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './ehfaz.component.html',
-  styleUrls: ['./ehfaz.component.css']
+  styleUrls: ['./ehfaz.component.css'],
+  standalone: false
 })
 export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
   sheikhs: Sheikh[] = [
@@ -252,77 +249,102 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
     return ayahCounts[sura - 1] || 0;
   }
 
+  getAvailableStartAyahs(): number[] {
+    const ayahCount = this.getSuraAyahCount(this.startSura);
+    return Array.from({ length: ayahCount }, (_, i) => i + 1);
+  }
+
+  getAvailableEndSuras(): Sura[] {
+    return this.surahs.filter(surah => surah.number >= this.startSura);
+  }
+
+  getAvailableEndAyahs(): number[] {
+    if (this.startSura === this.endSura) {
+      return Array.from({ length: this.getSuraAyahCount(this.endSura) }, (_, i) => i + 1)
+        .filter(ayah => ayah >= this.startAyah);
+    }
+    return Array.from({ length: this.getSuraAyahCount(this.endSura) }, (_, i) => i + 1);
+  }
+
+  onSheikhChange() {
+    console.log("Sheikh changed to:", this.selectedSheikh);
+  }
+
+  onStartSuraChange() {
+    console.log("Start Sura changed to:", this.startSura);
+    this.startAyah = 1;
+    if (this.endSura < this.startSura) {
+      this.endSura = this.startSura;
+      this.endAyah = this.startAyah;
+    }
+  }
+
+  onStartAyahChange() {
+    console.log("Start Ayah changed to:", this.startAyah);
+    if (this.startSura === this.endSura && this.endAyah < this.startAyah) {
+      this.endAyah = this.startAyah;
+    }
+  }
+
+  onEndSuraChange() {
+    console.log("End Sura changed to:", this.endSura);
+    this.endAyah = 1;
+  }
+
+  getSurahName(sura: number): string {
+    const surah = this.surahs.find(s => s.number === sura);
+    return surah ? surah.name : '';
+  }
+
   playAudio() {
-    if (this.isPlaying) return;
-    
+    if (this.isPlaying) {
+      return;
+    }
+
     this.prepareAudioQueue();
     this.currentAudioIndex = 0;
     this.currentRepetition = 0;
-    
-    if (this.audioQueue.length === 0) {
-      console.log('No audio files to play');
-      return;
-    }
-    
     this.isPlaying = true;
     this.playNextAudio();
   }
 
   playNextAudio() {
-    if (!this.isPlaying || this.currentAudioIndex >= this.audioQueue.length) {
-      if (this.infiniteLoop) {
-        // If infinite loop is enabled, just reset the index and continue
-        this.currentAudioIndex = 0;
-        this.playNextAudio();
-      } else if (this.currentRepetition < this.repetitionCount - 1) {
-        // Start next repetition
-        this.currentRepetition++;
+    if (!this.isPlaying) {
+      return;
+    }
+
+    if (this.currentAudioIndex >= this.audioQueue.length) {
+      this.currentRepetition++;
+      
+      if (this.infiniteLoop || this.currentRepetition < this.repetitionCount) {
         this.currentAudioIndex = 0;
         this.playNextAudio();
       } else {
-        // All repetitions completed
-        this.isPlaying = false;
-        this.currentRepetition = 0;
-        this.currentAudioIndex = 0;
+        this.stopAudio();
       }
       return;
     }
 
-    if (this.currentAudio) {
-      this.currentAudio.pause();
-      this.currentAudio = null;
-    }
+    const audioUrl = this.audioQueue[this.currentAudioIndex];
+    console.log("Playing audio:", audioUrl);
 
-    this.currentAudio = new Audio(this.audioQueue[this.currentAudioIndex]);
-    
-    // Add error handling
-    this.currentAudio.onerror = (e) => {
-      console.error('Error loading audio:', e);
-      // Skip to next audio on error
+    this.currentAudio = new Audio(audioUrl);
+    this.currentAudio.addEventListener('ended', () => {
       this.currentAudioIndex++;
       this.playNextAudio();
-    };
-    
-    // Add loading handling
-    this.currentAudio.oncanplaythrough = () => {
-      console.log('Audio loaded and ready to play');
-    };
-    
-    this.currentAudio.onended = () => {
+    });
+
+    this.currentAudio.addEventListener('error', (error) => {
+      console.error("Error playing audio:", error);
       this.currentAudioIndex++;
       this.playNextAudio();
-    };
-    
-    // Use a promise to handle play() which may return a promise in modern browsers
-    const playPromise = this.currentAudio.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(error => {
-        console.error('Error playing audio:', error);
-        // Skip to next audio on error
-        this.currentAudioIndex++;
-        this.playNextAudio();
-      });
-    }
+    });
+
+    this.currentAudio.play().catch(error => {
+      console.error("Error playing audio:", error);
+      this.currentAudioIndex++;
+      this.playNextAudio();
+    });
   }
 
   stopAudio() {
@@ -331,142 +353,5 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
       this.currentAudio.pause();
       this.currentAudio = null;
     }
-    this.currentRepetition = 0;
-    this.currentAudioIndex = 0;
   }
-
-  getSurahRange(): number[] {
-    return Array.from({length: 114}, (_, i) => i + 1);
-  }
-
-  getSurahName(surahNumber: number): string {
-    const surah = this.surahs.find(s => s.number === surahNumber);
-    return surah ? surah.name : surahNumber.toString();
-  }
-
-  getAyahRange(sura: number): number[] {
-    console.log("getAyahRange called with sura:", sura);
-    const ayahCount = this.getSuraAyahCount(sura);
-    console.log("Ayah count for sura", sura, "is:", ayahCount);
-    const range = Array.from({length: ayahCount}, (_, i) => i + 1);
-    console.log("Ayah Range:", range);
-    return range;
-  }
-
-  // Get available end Suras based on start Sura
-  getAvailableEndSuras(): Sura[] {
-    return this.surahs.filter(surah => surah.number >= this.startSura);
-  }
-
-  // Get available start Ayahs based on start Sura
-  getAvailableStartAyahs(): number[] {
-    return Array.from({length: this.getSuraAyahCount(this.startSura)}, (_, i) => i + 1);
-  }
-
-  // Handle start Ayah change
-  onStartAyahChange() {
-    // If same Sura, ensure end Ayah is not before start Ayah
-    if (this.startSura === this.endSura) {
-      // If end Ayah is less than start Ayah, set it to start Ayah
-      if (this.endAyah < this.startAyah) {
-        this.endAyah = this.startAyah;
-      }
-      
-      // If end Ayah is beyond the Sura's Ayah count, set it to the last Ayah
-      const maxAyah = this.getSuraAyahCount(this.endSura);
-      if (this.endAyah > maxAyah) {
-        this.endAyah = maxAyah;
-      }
-    }
-    
-    // Force update of the end Ayah dropdown
-    this.updateEndAyahOptions();
-  }
-  
-  // Force update of the end Ayah dropdown
-  updateEndAyahOptions() {
-    // This is a workaround to force Angular to update the end Ayah dropdown
-    // We temporarily change the end Ayah value and then change it back
-    const tempEndAyah = this.endAyah;
-    this.endAyah = 0;
-    setTimeout(() => {
-      this.endAyah = tempEndAyah;
-    }, 0);
-  }
-
-  // Get available end Ayahs based on selected Suras
-  getAvailableEndAyahs(): number[] {
-    if (this.startSura === this.endSura) {
-      // If same Sura, only show Ayahs from start Ayah to end
-      const maxAyah = this.getSuraAyahCount(this.endSura);
-      const ayahs = [];
-      for (let i = this.startAyah; i <= maxAyah; i++) {
-        ayahs.push(i);
-      }
-      return ayahs;
-    } else {
-      // If different Sura, show all Ayahs of the end Sura
-      const ayahs = [];
-      for (let i = 1; i <= this.getSuraAyahCount(this.endSura); i++) {
-        ayahs.push(i);
-      }
-      return ayahs;
-    }
-  }
-
-  // Handle start Sura change
-  onStartSuraChange() {
-    // Reset end Sura if it's before start Sura
-    if (this.endSura < this.startSura) {
-      this.endSura = this.startSura;
-    }
-    // Reset start Ayah if it's beyond the Sura's Ayah count
-    const maxAyah = this.getSuraAyahCount(this.startSura);
-    if (this.startAyah > maxAyah) {
-      this.startAyah = 1;
-    }
-    
-    // Reset end Ayah if it's beyond the end Sura's Ayah count
-    const endMaxAyah = this.getSuraAyahCount(this.endSura);
-    if (this.endAyah > endMaxAyah) {
-      this.endAyah = 1;
-    }
-    
-    // If same Sura, ensure end Ayah is not before start Ayah
-    if (this.startSura === this.endSura && this.endAyah < this.startAyah) {
-      this.endAyah = this.startAyah;
-    }
-    
-    // Force update of the end Ayah dropdown
-    this.updateEndAyahOptions();
-  }
-
-  // Handle end Sura change
-  onEndSuraChange() {
-    // Reset end Ayah if it's beyond the Sura's Ayah count
-    const maxAyah = this.getSuraAyahCount(this.endSura);
-    if (this.endAyah > maxAyah) {
-      this.endAyah = 1;
-    }
-    
-    // If same Sura, ensure end Ayah is not before start Ayah
-    if (this.startSura === this.endSura && this.endAyah < this.startAyah) {
-      this.endAyah = this.startAyah;
-    }
-    
-    // Force update of the end Ayah dropdown
-    this.updateEndAyahOptions();
-  }
-
-  // Handle sheikh change
-  onSheikhChange() {
-    console.log("Sheikh changed to:", this.selectedSheikh);
-    // If audio is playing, stop it
-    if (this.isPlaying) {
-      this.stopAudio();
-    }
-    // Clear the audio queue
-    this.audioQueue = [];
-    this.currentAudioIndex = 0;
-  }
-}
+} 
