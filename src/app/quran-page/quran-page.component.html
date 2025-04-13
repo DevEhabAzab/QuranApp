@@ -1,0 +1,23 @@
+<div class="a4-container">
+  <div class="quran-text">
+    <ng-container *ngFor="let ayah of ayahs">
+      <span class="ayah">
+        <ng-container *ngFor="let word of getWords(ayah.text_uthmani)">
+          {{ replaceDiacritic(word) }} 
+        </ng-container>
+        <span class="ayah-number">{{ ayah.verse_number }}</span>
+      </span>
+    </ng-container>
+  </div>
+</div>
+
+  
+
+
+  <!-- Pagination Controls -->
+  <div class="pagination">
+    <button (click)="prevPage()" [disabled]="currentPage === 1">Previous</button>
+    <span>Page {{ currentPage }}</span>
+    <button (click)="nextPage()">Next</button>
+  </div>
+  

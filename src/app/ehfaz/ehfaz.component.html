@@ -1,0 +1,78 @@
+<div class="ehfaz-container">
+  <h1>Ehfaz Component</h1>
+  
+  <div class="controls">
+    <div class="sheikh-select">
+      <label for="sheikh">Sheikh:</label>
+      <select id="sheikh" [(ngModel)]="selectedSheikh" (ngModelChange)="onSheikhChange()" class="form-control">
+        <option *ngFor="let sheikh of sheikhs" [value]="sheikh.value">
+          {{sheikh.text}}
+        </option>
+      </select>
+    </div>
+    
+    <div class="range-select">
+      <div class="ayah-select">
+        <label for="startSura">Start Sura:</label>
+        <select id="startSura" [(ngModel)]="startSura" (ngModelChange)="onStartSuraChange()" class="form-control">
+          <option *ngFor="let surah of surahs" [value]="surah.number">
+            {{surah.number}}. {{surah.name}}
+          </option>
+        </select>
+      </div>
+      
+      <div class="ayah-select">
+        <label for="startAyah">Start Ayah:</label>
+        <select id="startAyah" [(ngModel)]="startAyah" (ngModelChange)="onStartAyahChange()" class="form-control">
+          <option *ngFor="let i of getAvailableStartAyahs()" [value]="i">
+            {{i}}
+          </option>
+        </select>
+      </div>
+      
+      <div class="ayah-select">
+        <label for="endSura">End Sura:</label>
+        <select id="endSura" [(ngModel)]="endSura" (ngModelChange)="onEndSuraChange()" class="form-control">
+          <option *ngFor="let surah of getAvailableEndSuras()" [value]="surah.number">
+            {{surah.number}}. {{surah.name}}
+          </option>
+        </select>
+      </div>
+      
+      <div class="ayah-select">
+        <label for="endAyah">End Ayah:</label>
+        <select id="endAyah" [(ngModel)]="endAyah" class="form-control">
+          <option *ngFor="let i of getAvailableEndAyahs()" [value]="i">
+            {{i}}
+          </option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="repetition-select">
+      <label for="repetition">Repetition:</label>
+      <select id="repetition" [(ngModel)]="repetitionCount" [disabled]="infiniteLoop" class="form-control">
+        <option *ngFor="let count of repeatOptions" [value]="count">
+          {{count}}x
+        </option>
+      </select>
+      
+      <div class="infinite-loop">
+        <input type="checkbox" id="infiniteLoop" [(ngModel)]="infiniteLoop">
+        <label for="infiniteLoop">Infinite Loop</label>
+      </div>
+    </div>
+    
+    <div class="playback-controls">
+      <button (click)="playAudio()" [disabled]="isPlaying">Play</button>
+      <button (click)="stopAudio()" [disabled]="!isPlaying">Stop</button>
+    </div>
+  </div>
+  
+  <div class="display-area" *ngIf="isPlaying">
+    <h2>Sura {{getSurahName(currentSura)}}, Ayah {{currentAyah}}</h2>
+    <p class="repetition-info" *ngIf="!infiniteLoop && repetitionCount > 1">Repetition {{currentRepetition + 1}} of {{repetitionCount}}</p>
+    <p class="repetition-info" *ngIf="infiniteLoop">Infinite Loop Mode</p>
+    <img [src]="getImageUrl(currentSura, currentAyah)" alt="Quran Text">
+  </div>
+</div>
