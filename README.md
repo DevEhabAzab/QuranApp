@@ -1,59 +1,67 @@
-# Hafazny
+# Hafazny - Quran Memorization App
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.0.
+Hafazny is an Angular-based web application designed to help users memorize the Quran through audio playback and visual aids.
 
-## Development server
+## Features
 
-To start a local development server, run:
+- Listen to Quran recitations from various renowned sheikhs
+- Select specific surahs and ayahs for focused memorization
+- Adjustable repetition settings (1-10 times)
+- Infinite loop mode for continuous listening
+- Visual display of Quran text alongside audio
+- Multiple audio quality options (32kbps to 192kbps)
 
-```bash
-ng serve
-```
+## Technologies Used
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+- Angular
+- TypeScript
+- HTML/CSS
+- EveryAyah API for Quran audio and text
 
-## Code scaffolding
+## Getting Started
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Prerequisites
 
-```bash
-ng generate component component-name
-```
+- Node.js (v14 or higher)
+- npm (v6 or higher)
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### Installation
 
-```bash
-ng generate --help
-```
+1. Clone the repository
+   ```
+   git clone https://github.com/yourusername/hafazny.git
+   ```
 
-## Building
+2. Navigate to the project directory
+   ```
+   cd hafazny
+   ```
 
-To build the project run:
+3. Install dependencies
+   ```
+   npm install
+   ```
 
-```bash
-ng build
-```
+4. Start the development server
+   ```
+   ng serve
+   ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+5. Open your browser and navigate to `http://localhost:4200`
 
-## Running unit tests
+## Usage
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+1. Select a sheikh from the dropdown menu
+2. Choose the start and end surah/ayah for your memorization session
+3. Set the number of repetitions or enable infinite loop
+4. Click "Play" to start the audio playback
+5. The Quran text will be displayed alongside the audio
 
-```bash
-ng test
-```
+## License
 
-## Running end-to-end tests
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-For end-to-end (e2e) testing, run:
+## Acknowledgments
 
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [EveryAyah](http://everyayah.com/) for providing the Quran audio and text resources
+- All the sheikhs whose recitations are included in this application
