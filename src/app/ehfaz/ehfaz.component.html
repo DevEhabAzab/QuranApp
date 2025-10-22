@@ -1,28 +1,36 @@
 <div class="ehfaz-container">
-  <h1>Ehfaz</h1>
+  <div class="lang-select">
+     <!-- <label for="lang">{{ 'app.lang' | translate }}</label> -->
+     <select id="lang" [(ngModel)]="currentLang" (ngModelChange)="changeLanguage($event)" class="form-control">
+       <option *ngFor="let l of languages" [value]="l.code">{{ l.label }}</option>
+     </select>
+   </div>
+
+
+  <h1> {{ 'app.title' | translate }}</h1>
   
   <div class="controls">
     <div class="sheikh-select">
-      <label for="sheikh">Sheikh:</label>
+      <label for="sheikh">{{'Select sheikh'| translate}}:</label>
       <select id="sheikh" [(ngModel)]="selectedSheikh" (ngModelChange)="onSheikhChange()" class="form-control">
         <option *ngFor="let sheikh of sheikhs" [value]="sheikh.value">
-          {{sheikh.text}}
+          {{ 'SHEIKHS.' + sheikh.text | translate }}
         </option>
       </select>
     </div>
     
     <div class="range-select">
       <div class="ayah-select">
-        <label for="startSura">Start Sura:</label>
+        <label for="startSura">{{'starting Sura'|translate}}:</label>
         <select id="startSura" [(ngModel)]="startSura" (ngModelChange)="onStartSuraChange()" class="form-control">
           <option *ngFor="let surah of surahs" [value]="surah.number">
-            {{surah.number}}. {{surah.name}}
+            {{surah.number}}. {{'suras.'+surah.number | translate}}
           </option>
         </select>
       </div>
       
       <div class="ayah-select">
-        <label for="startAyah">Start Ayah:</label>
+        <label for="startAyah">{{'starting Ayah'|translate}}:</label>
         <select id="startAyah" [(ngModel)]="startAyah" (ngModelChange)="onStartAyahChange()" class="form-control">
           <option *ngFor="let i of getAvailableStartAyahs()" [value]="i">
             {{i}}
@@ -31,16 +39,16 @@
       </div>
       
       <div class="ayah-select">
-        <label for="endSura">End Sura:</label>
+        <label for="endSura">{{'end Sura'|translate}}:</label>
         <select id="endSura" [(ngModel)]="endSura" (ngModelChange)="onEndSuraChange()" class="form-control">
           <option *ngFor="let surah of getAvailableEndSuras()" [value]="surah.number">
-            {{surah.number}}. {{surah.name}}
+            {{surah.number}}. {{'suras.'+surah.number | translate}}
           </option>
         </select>
       </div>
       
       <div class="ayah-select">
-        <label for="endAyah">End Ayah:</label>
+        <label for="endAyah">{{'end Ayah'|translate}}:</label>
         <select id="endAyah" [(ngModel)]="endAyah" class="form-control">
           <option *ngFor="let i of getAvailableEndAyahs()" [value]="i">
             {{i}}
@@ -50,7 +58,7 @@
     </div>
     
     <div class="repetition-select">
-      <label for="repetition">Repetition:</label>
+      <label for="repetition">{{'Repetition'|translate}}:</label>
       <select id="repetition" [(ngModel)]="repetitionCount" [disabled]="infiniteLoop" class="form-control">
         <option *ngFor="let count of repeatOptions" [value]="count">
           {{count}}x
@@ -59,20 +67,20 @@
       
       <div class="infinite-loop">
         <input type="checkbox" id="infiniteLoop" [(ngModel)]="infiniteLoop">
-        <label for="infiniteLoop">Infinite Loop</label>
+        <label for="infiniteLoop">{{'Infinite Loop'|translate}}</label>
       </div>
     </div>
     
     <div class="playback-controls">
-      <button (click)="playAudio()" [disabled]="isPlaying">Play</button>
-      <button (click)="stopAudio()" [disabled]="!isPlaying">Stop</button>
+      <button (click)="playAudio()" [disabled]="isPlaying">{{'Play' | translate }}</button>
+      <button (click)="stopAudio()" [disabled]="!isPlaying"> {{'Stop' | translate }}</button>
     </div>
   </div>
   
   <div class="display-area">
     <h2>سورة {{currentSuraName}}، آية {{currentAyah}}</h2>
-    <p class="repetition-info" *ngIf="!infiniteLoop && repetitionCount > 1">Repetition {{currentRepetition + 1}} of {{repetitionCount}}</p>
-    <p class="repetition-info" *ngIf="infiniteLoop">Infinite Loop Mode</p>
+    <p class="repetition-info" *ngIf="!infiniteLoop && repetitionCount > 1">{{'Repetition'|translate}} {{currentRepetition + 1}} {{'from'|translate}} {{repetitionCount}}</p>
+    <p class="repetition-info" *ngIf="infiniteLoop">{{'Infinite Loop Mode'|translate}}</p>
     <img [src]="getImageUrl(currentSura, currentAyah)" alt="Quran Text">
   </div>
   

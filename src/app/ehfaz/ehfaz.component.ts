@@ -1,9 +1,11 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, HostListener } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { TranslateService } from '@ngx-translate/core';
 
 interface Sheikh {
   text: string;
   value: string;
+  translatedText?: string;
 }
 
 interface Sura {
@@ -190,6 +192,11 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
   preloadedImages: HTMLImageElement[] = [];
   preloadCount: number = 3;
   currentYear = new Date().getFullYear();
+  languages = [
+    { code: 'en', label: 'English' },
+    { code: 'ar', label: 'العربية' }
+  ];
+  currentLang: string = 'en';
 
   // Add properties for audio concatenation
   private nextAudio: HTMLAudioElement | null = null;
@@ -197,10 +204,22 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
   private audioEndedHandler: (() => void) | null = null;
   private audioErrorHandler: ((error: Event) => void) | null = null;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private translate: TranslateService) {
         this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     console.log("EhfazComponent constructor called");
     window.console.log("Direct console.log from EhfazComponent constructor");
+
+
+    this.translate.use('ar'); // Set the default language
+    // languages setup
+    this.translate.addLangs(this.languages.map(l => l.code));
+    this.translate.setDefaultLang('ar');
+    const saved = localStorage.getItem('app_lang') || 'ar';
+    this.currentLang = saved;
+    this.translate.use(this.currentLang);
+    document.documentElement.lang = this.currentLang;
+    document.documentElement.dir = this.currentLang === 'ar' ? 'rtl' : 'ltr';
+   
   }
 
   ngOnInit() {
@@ -221,8 +240,30 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log("Default sheikh selected:", this.selectedSheikh);
     console.log("Initial sura:", this.currentSura);
     console.log("Initial sura name:", this.currentSuraName);
+    //this.translateSheikhs() 
   }
 
+
+    translateSheikhs() {
+    this.sheikhs.forEach(sheikh => {
+      this.translate.get('SHEIKHS.'+sheikh.text).subscribe((translatedText: string) => {
+        sheikh.translatedText = translatedText??sheikh.text; // Store the translated text
+      });
+    });
+
+    
+  }
+
+async changeLanguage(lang: string) {
+    if (!lang) return;
+    this.currentLang = lang;
+    this.translate.use(lang);
+    localStorage.setItem('app_lang', lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    // re-translate arrays and any dynamic labels
+    //await this.translateSheikhs();
+  }
   ngAfterViewInit() {
     console.log("EhfazComponent ngAfterViewInit called");
   }
