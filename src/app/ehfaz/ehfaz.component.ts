@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit, OnDestroy, HostListener } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { TranslateService } from '@ngx-translate/core';
+import { SheikhService } from '../services/sheikh.service';
 
 interface Sheikh {
   text: string;
@@ -204,7 +205,7 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
   private audioEndedHandler: (() => void) | null = null;
   private audioErrorHandler: ((error: Event) => void) | null = null;
 
-  constructor(private http: HttpClient, private translate: TranslateService) {
+  constructor(private http: HttpClient, private translate: TranslateService,private shikhService: SheikhService ) {
         this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     console.log("EhfazComponent constructor called");
     window.console.log("Direct console.log from EhfazComponent constructor");
@@ -241,6 +242,9 @@ export class EhfazComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log("Initial sura:", this.currentSura);
     console.log("Initial sura name:", this.currentSuraName);
     //this.translateSheikhs() 
+     this.shikhService.getSheikhs().subscribe((data: Sheikh[]) => {
+      this.sheikhs = data;
+    });
   }
 
 

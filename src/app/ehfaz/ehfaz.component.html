@@ -14,7 +14,7 @@
       <label for="sheikh">{{'Select sheikh'| translate}}:</label>
       <select id="sheikh" [(ngModel)]="selectedSheikh" (ngModelChange)="onSheikhChange()" class="form-control">
         <option *ngFor="let sheikh of sheikhs" [value]="sheikh.value">
-          {{ 'SHEIKHS.' + sheikh.text | translate }}
+          {{ 'SHEIKHS.' + sheikh.value | translate }}
         </option>
       </select>
     </div>
